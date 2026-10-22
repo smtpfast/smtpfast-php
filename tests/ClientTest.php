@@ -85,6 +85,8 @@ final class ClientTest extends TestCase
         yield 'option header name with a colon' => [[], ['X-Trace:' => 'a'], null];
         yield 'empty option header name' => [[], ['' => 'a'], null];
         yield 'idempotency key with a line break' => [[], [], "order-1\r\nX-Injected: 1"];
+        yield 'option header with a vertical tab' => [[], ['X-Trace' => "a\x0Bb"], null];
+        yield 'option header with DEL' => [[], ['X-Trace' => "a\x7Fb"], null];
     }
 
     /**
@@ -445,6 +447,27 @@ final class ClientTest extends TestCase
         $this->assertSame([0.0], $this->waits);
     }
 
+    public function testHeaderValueWithATabIsAllowed(): void
+    {
+        [$client, $t] = $this->client();
+        $client->domains->list(options: ['headers' => ['X-Trace' => "a\tb"]]);
+        $this->assertSame("a\tb", $t->header(0, 'X-Trace'));
+    }
+
+    public function testRfc850YearsUseTheHttpCenturyRule(): void
+    {
+        // Two digits for (this year + 44), 70 in 2026, are a date in the future: too long to wait.
+        // PHP's own two-digit rule would read 70 as 1970.
+        $year = sprintf('%02d', ((int) gmdate('Y') + 44) % 100);
+        [$client, $t] = $this->client([FakeTransport::json([], 503, ['Retry-After' => "Sunday, 06-Nov-$year 08:49:37 GMT"])]);
+        try {
+            $client->domains->list();
+            $this->fail('no exception');
+        } catch (InternalServerException) {
+            $this->assertCount(1, $t->calls);
+        }
+    }
+
     public function testInvalidHttpDateIsNotARetryAfter(): void
     {
         [$client, $t] = $this->client([FakeTransport::json([], 429, ['Retry-After' => 'Sun, 32 Nov 1994 08:49:37 GMT'])]);
@@ -530,6 +553,15 @@ final class ClientTest extends TestCase
         $this->assertSame('[{"to":"b@inbox.dev","headers":{}},{}]', $t->calls[1]['body']);
         $this->assertSame('{"contacts":[{"email":"b@inbox.dev","properties":{}}]}', $t->calls[2]['body']);
         $this->assertSame('{"properties":{"plan":"pro"},"segment_ids":[]}', $t->calls[3]['body']);
+    }
+
+    public function testMapsWithNumericKeysStayObjects(): void
+    {
+        [$client, $t] = $this->client();
+        $client->emails->send(['to' => ['b@inbox.dev'], 'template' => ['id' => 't', 'variables' => ['0' => 'zero', '1' => 'one']]]);
+        $client->contacts->update('ct_1', ['properties' => [5 => 'five'], 'segment_ids' => ['sg_1']]);
+        $this->assertSame('{"to":["b@inbox.dev"],"template":{"id":"t","variables":{"0":"zero","1":"one"}}}', $t->calls[0]['body']);
+        $this->assertSame('{"properties":{"5":"five"},"segment_ids":["sg_1"]}', $t->calls[1]['body']);
     }
 
     public function testCallersContentTypeIsKept(): void

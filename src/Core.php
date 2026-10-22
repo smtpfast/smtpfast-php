@@ -202,8 +202,16 @@ final class Core
 
             return is_finite($seconds) ? max($seconds, 0.0) : null;
         }
-        // The three HTTP-date formats: RFC 1123, RFC 850 and asctime.
-        foreach (['D, d M Y H:i:s \G\M\T', 'l, d-M-y H:i:s \G\M\T', 'D M j H:i:s Y'] as $format) {
+        // RFC 850 has a two-digit year: one more than 50 years ahead is in the past century (RFC 9110).
+        if (preg_match('/^[A-Za-z]+, (\d{2})-([A-Za-z]{3})-(\d{2}) (\d{2}:\d{2}:\d{2}) GMT$/D', $header, $m) === 1) {
+            $year = intdiv((int) gmdate('Y'), 100) * 100 + (int) $m[3];
+            if ($year > (int) gmdate('Y') + 50) {
+                $year -= 100;
+            }
+            $header = sprintf('%s-%s-%d %s', $m[1], $m[2], $year, $m[4]);
+        }
+        // The other two HTTP-date formats are RFC 1123 and asctime.
+        foreach (['D, d M Y H:i:s \G\M\T', 'd-M-Y H:i:s', 'D M j H:i:s Y'] as $format) {
             $date = \DateTimeImmutable::createFromFormat('!' . $format, $header, new \DateTimeZone('UTC'));
             $errors = \DateTimeImmutable::getLastErrors();
             if ($date !== false && ($errors === false || ($errors['warning_count'] === 0 && $errors['error_count'] === 0))) {
@@ -249,7 +257,7 @@ final class Core
     /**
      * Turn each empty PHP array that the shape marks as an object into {}.
      *
-     * @param array<mixed> $shape o: an object, p: its properties, v: the values of a map, i: the items of a list
+     * @param array<mixed> $shape o: an object, a: it can also be a list, p: its properties, v: the values of a map, i: the items of a list
      */
     private static function objects(mixed $value, array $shape): mixed
     {
@@ -270,6 +278,10 @@ final class Core
             if ($child !== null) {
                 $value[$key] = self::objects($item, $child);
             }
+        }
+        // A map with keys 0, 1, ... is still an object, such as template variables named 0 and 1.
+        if (isset($shape['o']) && !isset($shape['a']) && array_is_list($value)) {
+            return (object) $value;
         }
 
         return $value;
@@ -342,8 +354,9 @@ final class Core
         if (preg_match(self::HEADER_NAME, $name) !== 1) {
             throw new \InvalidArgumentException(sprintf('Invalid header name "%s".', addcslashes($name, "\0..\37\177")));
         }
-        if (strpbrk($value, "\r\n\0") !== false) {
-            throw new \InvalidArgumentException(sprintf('The value of header %s contains a line break or a NUL byte.', $name));
+        // RFC 9110 field values: visible characters, spaces and tabs, but no other control characters.
+        if (preg_match('/[\x00-\x08\x0A-\x1F\x7F]/', $value) === 1) {
+            throw new \InvalidArgumentException(sprintf('The value of header %s contains a line break or another control character.', $name));
         }
     }
 

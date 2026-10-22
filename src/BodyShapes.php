@@ -8,8 +8,8 @@ namespace SMTPfast;
 
 /**
  * Where each request body has JSON objects, by operation id, so an empty PHP array is sent
- * as {} there and as [] in a list. o: an object, p: its properties, v: the values of a map,
- * i: the items of a list.
+ * as {} there and as [] in a list. o: an object, a: it can also be a list, p: its properties,
+ * v: the values of a map, i: the items of a list.
  *
  * @internal
  */

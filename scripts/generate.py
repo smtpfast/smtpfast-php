@@ -171,9 +171,9 @@ def alias(name, schema, description=None):
 # --- BodyShapes.php -------------------------------------------------------------
 
 def shape_node(schema):
-    """Where a value has JSON objects: o = this value is an object, p = its
-    properties, v = the values of a map, i = the items of a list. Parts
-    without objects are left out."""
+    """Where a value has JSON objects: o = this value is an object, a = it can
+    also be a list, p = its properties, v = the values of a map, i = the items
+    of a list. prune() leaves out the parts without objects."""
     schema = deref(schema or {})
     if not isinstance(schema, dict):
         return {}
@@ -187,31 +187,43 @@ def shape_node(schema):
     out = {}
     if "object" in types or (not types and ("properties" in schema or "additionalProperties" in schema)):
         out["o"] = 1
-        props = {k: shape_node(v) for k, v in (schema.get("properties") or {}).items()}
-        props = {k: v for k, v in props.items() if v}
-        if props:
-            out["p"] = props
+        out["p"] = {k: shape_node(v) for k, v in (schema.get("properties") or {}).items()}
         if isinstance(schema.get("additionalProperties"), dict):
-            values = shape_node(schema["additionalProperties"])
-            if values:
-                out["v"] = values
+            out["v"] = shape_node(schema["additionalProperties"])
     if "array" in types:
-        items = shape_node(schema.get("items"))
-        if items:
-            out["i"] = items
+        out["a"] = 1
+        out["i"] = shape_node(schema.get("items"))
     return out
 
 
 def merge_nodes(nodes):
     out = {}
     for n in nodes:
-        if n.get("o"):
-            out["o"] = 1
+        for flag in ("o", "a"):
+            if n.get(flag):
+                out[flag] = 1
         for key in ("i", "v"):
             if key in n:
                 out[key] = merge_nodes([out.get(key, {}), n[key]])
         for name, child in n.get("p", {}).items():
             out.setdefault("p", {})[name] = merge_nodes([out.get("p", {}).get(name, {}), child])
+    return out
+
+
+def prune(n):
+    out = {}
+    if n.get("o"):
+        out["o"] = 1
+        if n.get("a"):
+            out["a"] = 1
+    for key in ("i", "v"):
+        child = prune(n[key]) if n.get(key) else {}
+        if child:
+            out[key] = child
+    props = {k: prune(v) for k, v in (n.get("p") or {}).items()}
+    props = {k: v for k, v in props.items() if v}
+    if props:
+        out["p"] = props
     return out
 
 
@@ -297,7 +309,7 @@ for path, item in SPEC["paths"].items():
             "body": body,
             "body_required": bool((op.get("requestBody") or {}).get("required")),
             "operation_id": op["operationId"],
-            "shape": shape_node(body_schema) if body_schema is not None else None,
+            "shape": prune(shape_node(body_schema)) if body_schema is not None else None,
             "result": result,
             "item": item_type,
             "idempotent": any(p["in"] == "header" and p["name"].lower() == "idempotency-key" for p in params),
@@ -454,8 +466,8 @@ shapes_src = (
     HEADER
     + "namespace SMTPfast;\n\n"
     + "/**\n * Where each request body has JSON objects, by operation id, so an empty PHP array is sent\n"
-    + " * as {} there and as [] in a list. o: an object, p: its properties, v: the values of a map,\n"
-    + " * i: the items of a list.\n *\n * @internal\n */\n"
+    + " * as {} there and as [] in a list. o: an object, a: it can also be a list, p: its properties,\n"
+    + " * v: the values of a map, i: the items of a list.\n *\n * @internal\n */\n"
     + "final class BodyShapes\n{\n    public const BODIES = [\n"
     + "\n".join(shapes)
     + "\n    ];\n}\n"
