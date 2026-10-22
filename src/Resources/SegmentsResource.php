@@ -48,7 +48,7 @@ final class SegmentsResource
      */
     public function create(array $params, array $options = []): mixed
     {
-        return $this->core->request('POST', '/v1/segments', body: $params, options: $options);
+        return $this->core->request('POST', '/v1/segments', body: $params, bodyShape: 'createSegment', options: $options);
     }
 
     /**
@@ -71,7 +71,7 @@ final class SegmentsResource
      */
     public function update(string $id, array $params, array $options = []): mixed
     {
-        return $this->core->request('PATCH', '/v1/segments/{id}', pathParams: ['id' => $id], body: $params, options: $options);
+        return $this->core->request('PATCH', '/v1/segments/{id}', pathParams: ['id' => $id], body: $params, bodyShape: 'updateSegment', options: $options);
     }
 
     /**

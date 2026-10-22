@@ -2,6 +2,8 @@
 
 Writes files that are never edited by hand:
   src/Types.php        a PHPStan array shape for every request and response
+  src/BodyShapes.php   where each request body has JSON objects, so an empty
+                       PHP array is sent as {} there and as [] in a list
   src/Resources/*.php  $client->emails->send() and the other methods, named
                        from the x-sdk-group and x-sdk-method of each operation
 """
@@ -166,6 +168,59 @@ def alias(name, schema, description=None):
     return name
 
 
+# --- BodyShapes.php -------------------------------------------------------------
+
+def shape_node(schema):
+    """Where a value has JSON objects: o = this value is an object, p = its
+    properties, v = the values of a map, i = the items of a list. Parts
+    without objects are left out."""
+    schema = deref(schema or {})
+    if not isinstance(schema, dict):
+        return {}
+    if "allOf" in schema:
+        return shape_node(merge_all_of(schema))
+    for key in ("anyOf", "oneOf"):
+        if key in schema:
+            return merge_nodes([shape_node(s) for s in schema[key]])
+    types = schema.get("type")
+    types = types if isinstance(types, list) else [types] if types else []
+    out = {}
+    if "object" in types or (not types and ("properties" in schema or "additionalProperties" in schema)):
+        out["o"] = 1
+        props = {k: shape_node(v) for k, v in (schema.get("properties") or {}).items()}
+        props = {k: v for k, v in props.items() if v}
+        if props:
+            out["p"] = props
+        if isinstance(schema.get("additionalProperties"), dict):
+            values = shape_node(schema["additionalProperties"])
+            if values:
+                out["v"] = values
+    if "array" in types:
+        items = shape_node(schema.get("items"))
+        if items:
+            out["i"] = items
+    return out
+
+
+def merge_nodes(nodes):
+    out = {}
+    for n in nodes:
+        if n.get("o"):
+            out["o"] = 1
+        for key in ("i", "v"):
+            if key in n:
+                out[key] = merge_nodes([out.get(key, {}), n[key]])
+        for name, child in n.get("p", {}).items():
+            out.setdefault("p", {})[name] = merge_nodes([out.get("p", {}).get(name, {}), child])
+    return out
+
+
+def php_array(value):
+    if isinstance(value, dict):
+        return "[" + ", ".join(f"{literal(k)} => {php_array(v)}" for k, v in value.items()) + "]"
+    return json.dumps(value)
+
+
 # --- operations ----------------------------------------------------------------
 
 def native(schema):
@@ -241,7 +296,8 @@ for path, item in SPEC["paths"].items():
             "query": query,
             "body": body,
             "body_required": bool((op.get("requestBody") or {}).get("required")),
-            "list_body": body_schema is not None and deref(body_schema).get("type") == "array",
+            "operation_id": op["operationId"],
+            "shape": shape_node(body_schema) if body_schema is not None else None,
             "result": result,
             "item": item_type,
             "idempotent": any(p["in"] == "header" and p["name"].lower() == "idempotency-key" for p in params),
@@ -313,8 +369,7 @@ def call(op, paged=False):
         parts.append("query: [" + ", ".join(query) + "]")
     if op["body"] and not paged:
         parts.append("body: $params")
-        if op["list_body"]:
-            parts.append("listBody: true")
+        parts.append(f"bodyShape: '{op['operation_id']}'")
     if op["idempotent"] and not paged:
         parts.append("idempotent: true")
         parts.append("idempotencyKey: $idempotencyKey")
@@ -394,6 +449,18 @@ for name, (t, description) in aliases.items():
         types_doc.append(f" * {doc(description)}")
     types_doc.append(f" * @phpstan-type {name} {t}")
 types_doc.append(" */")
+shapes = [f"        {literal(op['operation_id'])} => {php_array(op['shape'])}," for op in ops if op["shape"] is not None]
+shapes_src = (
+    HEADER
+    + "namespace SMTPfast;\n\n"
+    + "/**\n * Where each request body has JSON objects, by operation id, so an empty PHP array is sent\n"
+    + " * as {} there and as [] in a list. o: an object, p: its properties, v: the values of a map,\n"
+    + " * i: the items of a list.\n *\n * @internal\n */\n"
+    + "final class BodyShapes\n{\n    public const BODIES = [\n"
+    + "\n".join(shapes)
+    + "\n    ];\n}\n"
+)
+
 types_src = HEADER + "namespace SMTPfast;\n\n" + "\n".join(types_doc) + "\nfinal class Types\n{\n}\n"
 
 out_dir = ROOT / "src/Resources"
@@ -402,4 +469,5 @@ for old in out_dir.glob("*.php"):
 for cls, src in files.items():
     (out_dir / f"{cls}.php").write_text(src)
 (ROOT / "src/Types.php").write_text(types_src)
+(ROOT / "src/BodyShapes.php").write_text(shapes_src)
 print(f"src/Types.php: {len(aliases)} types; src/Resources: {len(files)} classes, {len(ops)} operations")

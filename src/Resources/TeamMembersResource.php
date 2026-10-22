@@ -44,7 +44,7 @@ final class TeamMembersResource
      */
     public function update(string $id, array $params, array $options = []): mixed
     {
-        return $this->core->request('PATCH', '/v1/team/members/{id}', pathParams: ['id' => $id], body: $params, options: $options);
+        return $this->core->request('PATCH', '/v1/team/members/{id}', pathParams: ['id' => $id], body: $params, bodyShape: 'updateTeamMember', options: $options);
     }
 
     /**

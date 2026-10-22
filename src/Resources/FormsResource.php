@@ -50,7 +50,7 @@ final class FormsResource
      */
     public function create(array $params, array $options = []): mixed
     {
-        return $this->core->request('POST', '/v1/forms', body: $params, options: $options);
+        return $this->core->request('POST', '/v1/forms', body: $params, bodyShape: 'createSignupForm', options: $options);
     }
 
     /**
@@ -62,7 +62,7 @@ final class FormsResource
      */
     public function previewWelcomeEmail(string $id, ?array $params = null, array $options = []): mixed
     {
-        return $this->core->request('POST', '/v1/forms/{id}/welcome-preview', pathParams: ['id' => $id], body: $params, options: $options);
+        return $this->core->request('POST', '/v1/forms/{id}/welcome-preview', pathParams: ['id' => $id], body: $params, bodyShape: 'previewFormWelcomeEmail', options: $options);
     }
 
     /**
@@ -85,7 +85,7 @@ final class FormsResource
      */
     public function update(string $id, array $params, array $options = []): mixed
     {
-        return $this->core->request('PATCH', '/v1/forms/{id}', pathParams: ['id' => $id], body: $params, options: $options);
+        return $this->core->request('PATCH', '/v1/forms/{id}', pathParams: ['id' => $id], body: $params, bodyShape: 'updateSignupForm', options: $options);
     }
 
     /**

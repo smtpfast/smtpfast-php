@@ -37,7 +37,7 @@ final class SuppressionsResource
      */
     public function addBatch(array $params, array $options = []): mixed
     {
-        return $this->core->request('POST', '/v1/suppressions/batch/add', body: $params, options: $options);
+        return $this->core->request('POST', '/v1/suppressions/batch/add', body: $params, bodyShape: 'addSuppressionsBatch', options: $options);
     }
 
     /**
@@ -49,7 +49,7 @@ final class SuppressionsResource
      */
     public function removeBatch(array $params, array $options = []): mixed
     {
-        return $this->core->request('POST', '/v1/suppressions/batch/remove', body: $params, options: $options);
+        return $this->core->request('POST', '/v1/suppressions/batch/remove', body: $params, bodyShape: 'removeSuppressionsBatch', options: $options);
     }
 
     /**
@@ -73,7 +73,7 @@ final class SuppressionsResource
      */
     public function create(array $params, array $options = []): mixed
     {
-        return $this->core->request('POST', '/v1/suppressions', body: $params, options: $options);
+        return $this->core->request('POST', '/v1/suppressions', body: $params, bodyShape: 'createSuppression', options: $options);
     }
 
     /**

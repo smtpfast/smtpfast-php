@@ -31,7 +31,7 @@ Requests and responses are plain PHP arrays. `SMTPfast\Types` describes each one
 
 Every API operation is a method, named after its path: `$client->domains->verify($id)`, `$client->contacts->segments->add($contactId, $segmentId)`, `$client->inboxes->threads->emails->reply($inboxId, $threadId, $emailId, $params)`. Path parameters come first, then the request body, then the query parameters, which read best as named arguments: `$client->emails->list(limit: 20, status: 'bounced')`.
 
-An empty PHP array is sent as a JSON list. Where the API expects an empty object inside a request, pass `new \stdClass()`.
+An empty PHP array is sent as `{}` where the spec says the value is an object, and as `[]` where it is a list.
 
 ## Options
 
@@ -92,7 +92,7 @@ if ($event['type'] === 'email.bounced') {
 
 ## How this SDK is made
 
-The SDK is generated from the [OpenAPI document](https://smtpfa.st/api/v1/openapi.json), so it follows the API without hand edits. `scripts/generate.py` (Python 3 standard library only) writes `src/Types.php` and `src/Resources/`, naming every method from the `x-sdk-group` and `x-sdk-method` the spec gives each operation; the SDKs for other languages use the same names. `Client.php`, `Core.php`, `Webhooks.php`, `Http/` and `Exception/` are written by hand.
+The SDK is generated from the [OpenAPI document](https://smtpfa.st/api/v1/openapi.json), so it follows the API without hand edits. `scripts/generate.py` (Python 3 standard library only) writes `src/Types.php`, `src/BodyShapes.php` and `src/Resources/`, naming every method from the `x-sdk-group` and `x-sdk-method` the spec gives each operation; the SDKs for other languages use the same names. `Client.php`, `Core.php`, `Webhooks.php`, `Http/` and `Exception/` are written by hand.
 
 ```bash
 python3 scripts/pull_spec.py   # download the published spec into spec/openapi.json

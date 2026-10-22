@@ -54,7 +54,7 @@ final class WebhooksResource
      */
     public function create(array $params, array $options = []): mixed
     {
-        return $this->core->request('POST', '/v1/webhooks', body: $params, options: $options);
+        return $this->core->request('POST', '/v1/webhooks', body: $params, bodyShape: 'createWebhook', options: $options);
     }
 
     /**
@@ -77,7 +77,7 @@ final class WebhooksResource
      */
     public function replace(string $id, array $params, array $options = []): mixed
     {
-        return $this->core->request('PUT', '/v1/webhooks/{id}', pathParams: ['id' => $id], body: $params, options: $options);
+        return $this->core->request('PUT', '/v1/webhooks/{id}', pathParams: ['id' => $id], body: $params, bodyShape: 'updateWebhook', options: $options);
     }
 
     /**
@@ -89,7 +89,7 @@ final class WebhooksResource
      */
     public function update(string $id, array $params, array $options = []): mixed
     {
-        return $this->core->request('PATCH', '/v1/webhooks/{id}', pathParams: ['id' => $id], body: $params, options: $options);
+        return $this->core->request('PATCH', '/v1/webhooks/{id}', pathParams: ['id' => $id], body: $params, bodyShape: 'patchWebhook', options: $options);
     }
 
     /**

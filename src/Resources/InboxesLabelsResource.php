@@ -46,7 +46,7 @@ final class InboxesLabelsResource
      */
     public function create(string $inboxId, array $params, array $options = []): mixed
     {
-        return $this->core->request('POST', '/v1/inboxes/{inbox_id}/labels', pathParams: ['inbox_id' => $inboxId], body: $params, options: $options);
+        return $this->core->request('POST', '/v1/inboxes/{inbox_id}/labels', pathParams: ['inbox_id' => $inboxId], body: $params, bodyShape: 'createInboxLabel', options: $options);
     }
 
     /**
@@ -69,7 +69,7 @@ final class InboxesLabelsResource
      */
     public function update(string $inboxId, string $labelId, array $params, array $options = []): mixed
     {
-        return $this->core->request('PATCH', '/v1/inboxes/{inbox_id}/labels/{label_id}', pathParams: ['inbox_id' => $inboxId, 'label_id' => $labelId], body: $params, options: $options);
+        return $this->core->request('PATCH', '/v1/inboxes/{inbox_id}/labels/{label_id}', pathParams: ['inbox_id' => $inboxId, 'label_id' => $labelId], body: $params, bodyShape: 'updateInboxLabel', options: $options);
     }
 
     /**

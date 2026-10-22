@@ -46,7 +46,7 @@ final class LinkDomainsResource
      */
     public function create(array $params, array $options = []): mixed
     {
-        return $this->core->request('POST', '/v1/link-domains', body: $params, options: $options);
+        return $this->core->request('POST', '/v1/link-domains', body: $params, bodyShape: 'createLinkDomain', options: $options);
     }
 
     /**

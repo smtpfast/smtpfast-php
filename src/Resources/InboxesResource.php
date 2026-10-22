@@ -67,7 +67,7 @@ final class InboxesResource
      */
     public function create(array $params, array $options = []): mixed
     {
-        return $this->core->request('POST', '/v1/inboxes', body: $params, options: $options);
+        return $this->core->request('POST', '/v1/inboxes', body: $params, bodyShape: 'createInbox', options: $options);
     }
 
     /**
@@ -90,7 +90,7 @@ final class InboxesResource
      */
     public function update(string $inboxId, array $params, array $options = []): mixed
     {
-        return $this->core->request('PATCH', '/v1/inboxes/{inbox_id}', pathParams: ['inbox_id' => $inboxId], body: $params, options: $options);
+        return $this->core->request('PATCH', '/v1/inboxes/{inbox_id}', pathParams: ['inbox_id' => $inboxId], body: $params, bodyShape: 'updateInbox', options: $options);
     }
 
     /**

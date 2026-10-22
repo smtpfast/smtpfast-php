@@ -60,6 +60,7 @@ final class Core
      * @param array<string, string> $pathParams
      * @param array<string, mixed> $query
      * @param array<array-key, mixed>|null $body
+     * @param string|null $bodyShape the operation id in BodyShapes, which says where the body has JSON objects
      * @param RequestOptions $options
      *
      * @throws SMTPfastException
@@ -71,7 +72,7 @@ final class Core
         array $pathParams = [],
         array $query = [],
         ?array $body = null,
-        bool $listBody = false,
+        ?string $bodyShape = null,
         bool $idempotent = false,
         ?string $idempotencyKey = null,
         array $options = [],
@@ -106,12 +107,15 @@ final class Core
         $payload = null;
         if ($body !== null) {
             try {
-                // An empty PHP array is a JSON list; an operation that takes an object gets {}.
-                $payload = json_encode($body === [] && !$listBody ? new \stdClass() : $body, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+                // json_encode writes an empty PHP array as [], so the spec says where {} is meant.
+                $shape = $bodyShape !== null ? (BodyShapes::BODIES[$bodyShape] ?? []) : [];
+                $payload = json_encode(self::objects($body, $shape), JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
             } catch (\JsonException $e) {
                 throw new SMTPfastException('Could not encode the request body as JSON: ' . $e->getMessage(), 0, $e);
             }
-            self::setHeader($headers, 'Content-Type', 'application/json');
+            if (self::getHeader($headers, 'Content-Type') === null) {
+                self::setHeader($headers, 'Content-Type', 'application/json');
+            }
         }
 
         $url = $this->baseUrl . self::fill($route, $pathParams) . self::queryString($query);
@@ -198,12 +202,16 @@ final class Core
 
             return is_finite($seconds) ? max($seconds, 0.0) : null;
         }
-        $date = \DateTimeImmutable::createFromFormat('D, d M Y H:i:s \G\M\T', $header, new \DateTimeZone('UTC'));
-        if ($date === false) {
-            return null;
+        // The three HTTP-date formats: RFC 1123, RFC 850 and asctime.
+        foreach (['D, d M Y H:i:s \G\M\T', 'l, d-M-y H:i:s \G\M\T', 'D M j H:i:s Y'] as $format) {
+            $date = \DateTimeImmutable::createFromFormat('!' . $format, $header, new \DateTimeZone('UTC'));
+            $errors = \DateTimeImmutable::getLastErrors();
+            if ($date !== false && ($errors === false || ($errors['warning_count'] === 0 && $errors['error_count'] === 0))) {
+                return max((float) $date->getTimestamp() - microtime(true), 0.0);
+            }
         }
 
-        return max((float) $date->getTimestamp() - microtime(true), 0.0);
+        return null;
     }
 
     private static function backoff(int $attempt): float
@@ -236,6 +244,35 @@ final class Core
         } catch (\JsonException) {
             return $response->body;
         }
+    }
+
+    /**
+     * Turn each empty PHP array that the shape marks as an object into {}.
+     *
+     * @param array<mixed> $shape o: an object, p: its properties, v: the values of a map, i: the items of a list
+     */
+    private static function objects(mixed $value, array $shape): mixed
+    {
+        if (!is_array($value)) {
+            return $value;
+        }
+        if ($value === []) {
+            return isset($shape['o']) ? new \stdClass() : [];
+        }
+        $items = $shape['i'] ?? null;
+        if (array_is_list($value) && is_array($items)) {
+            return array_map(fn (mixed $item): mixed => self::objects($item, $items), $value);
+        }
+        $properties = is_array($shape['p'] ?? null) ? $shape['p'] : [];
+        $values = is_array($shape['v'] ?? null) ? $shape['v'] : null;
+        foreach ($value as $key => $item) {
+            $child = is_array($properties[$key] ?? null) ? $properties[$key] : $values;
+            if ($child !== null) {
+                $value[$key] = self::objects($item, $child);
+            }
+        }
+
+        return $value;
     }
 
     /**

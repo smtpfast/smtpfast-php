@@ -64,7 +64,7 @@ final class EmailsReceivingResource
      */
     public function mark(array $params, array $options = []): mixed
     {
-        return $this->core->request('PATCH', '/v1/emails/receiving', body: $params, options: $options);
+        return $this->core->request('PATCH', '/v1/emails/receiving', body: $params, bodyShape: 'markReceivedEmails', options: $options);
     }
 
     /**
@@ -87,7 +87,7 @@ final class EmailsReceivingResource
      */
     public function update(string $id, array $params, array $options = []): mixed
     {
-        return $this->core->request('PATCH', '/v1/emails/receiving/{id}', pathParams: ['id' => $id], body: $params, options: $options);
+        return $this->core->request('PATCH', '/v1/emails/receiving/{id}', pathParams: ['id' => $id], body: $params, bodyShape: 'updateReceivedEmail', options: $options);
     }
 
     /**
@@ -110,6 +110,6 @@ final class EmailsReceivingResource
      */
     public function reply(string $id, array $params, ?string $idempotencyKey = null, array $options = []): mixed
     {
-        return $this->core->request('POST', '/v1/emails/receiving/{id}/reply', pathParams: ['id' => $id], body: $params, idempotent: true, idempotencyKey: $idempotencyKey, options: $options);
+        return $this->core->request('POST', '/v1/emails/receiving/{id}/reply', pathParams: ['id' => $id], body: $params, bodyShape: 'replyToReceivedEmail', idempotent: true, idempotencyKey: $idempotencyKey, options: $options);
     }
 }

@@ -59,7 +59,7 @@ final class TemplatesResource
      */
     public function create(array $params, array $options = []): mixed
     {
-        return $this->core->request('POST', '/v1/templates', body: $params, options: $options);
+        return $this->core->request('POST', '/v1/templates', body: $params, bodyShape: 'createTemplate', options: $options);
     }
 
     /**
@@ -82,7 +82,7 @@ final class TemplatesResource
      */
     public function update(string $id, array $params, array $options = []): mixed
     {
-        return $this->core->request('PATCH', '/v1/templates/{id}', pathParams: ['id' => $id], body: $params, options: $options);
+        return $this->core->request('PATCH', '/v1/templates/{id}', pathParams: ['id' => $id], body: $params, bodyShape: 'updateTemplate', options: $options);
     }
 
     /**
@@ -105,7 +105,7 @@ final class TemplatesResource
      */
     public function publish(string $id, ?array $params = null, array $options = []): mixed
     {
-        return $this->core->request('POST', '/v1/templates/{id}/publish', pathParams: ['id' => $id], body: $params, options: $options);
+        return $this->core->request('POST', '/v1/templates/{id}/publish', pathParams: ['id' => $id], body: $params, bodyShape: 'publishTemplate', options: $options);
     }
 
     /**

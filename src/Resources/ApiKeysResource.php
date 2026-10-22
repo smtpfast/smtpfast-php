@@ -46,7 +46,7 @@ final class ApiKeysResource
      */
     public function create(array $params, array $options = []): mixed
     {
-        return $this->core->request('POST', '/v1/api-keys', body: $params, options: $options);
+        return $this->core->request('POST', '/v1/api-keys', body: $params, bodyShape: 'createApiKey', options: $options);
     }
 
     /**
@@ -58,7 +58,7 @@ final class ApiKeysResource
      */
     public function update(string $id, array $params, array $options = []): mixed
     {
-        return $this->core->request('PATCH', '/v1/api-keys/{id}', pathParams: ['id' => $id], body: $params, options: $options);
+        return $this->core->request('PATCH', '/v1/api-keys/{id}', pathParams: ['id' => $id], body: $params, bodyShape: 'updateApiKey', options: $options);
     }
 
     /**

@@ -47,7 +47,7 @@ final class ContactPropertiesResource
      */
     public function create(array $params, array $options = []): mixed
     {
-        return $this->core->request('POST', '/v1/contact-properties', body: $params, options: $options);
+        return $this->core->request('POST', '/v1/contact-properties', body: $params, bodyShape: 'createContactProperty', options: $options);
     }
 
     /**
@@ -70,7 +70,7 @@ final class ContactPropertiesResource
      */
     public function update(string $id, array $params, array $options = []): mixed
     {
-        return $this->core->request('PATCH', '/v1/contact-properties/{id}', pathParams: ['id' => $id], body: $params, options: $options);
+        return $this->core->request('PATCH', '/v1/contact-properties/{id}', pathParams: ['id' => $id], body: $params, bodyShape: 'updateContactProperty', options: $options);
     }
 
     /**

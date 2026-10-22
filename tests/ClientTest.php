@@ -426,6 +426,32 @@ final class ClientTest extends TestCase
         $this->assertSame([0.0], $this->waits);
     }
 
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function httpDates(): iterable
+    {
+        yield 'RFC 1123' => ['Sun, 06 Nov 1994 08:49:37 GMT'];
+        yield 'RFC 850' => ['Sunday, 06-Nov-94 08:49:37 GMT'];
+        yield 'asctime' => ['Sun Nov  6 08:49:37 1994'];
+    }
+
+    #[DataProvider('httpDates')]
+    public function testRetryAfterInEveryHttpDateFormat(string $date): void
+    {
+        [$client, $t] = $this->client([FakeTransport::json([], 429, ['Retry-After' => $date]), FakeTransport::json(['id' => 'ct_1'])]);
+        $client->contacts->create(['email' => 'b@inbox.dev']);
+        $this->assertCount(2, $t->calls);
+        $this->assertSame([0.0], $this->waits);
+    }
+
+    public function testInvalidHttpDateIsNotARetryAfter(): void
+    {
+        [$client, $t] = $this->client([FakeTransport::json([], 429, ['Retry-After' => 'Sun, 32 Nov 1994 08:49:37 GMT'])]);
+        $this->expectException(RateLimitException::class);
+        $client->domains->list();
+    }
+
     public function testUnreadableRetryAfterFallsBackToBackoff(): void
     {
         [$client, $t] = $this->client(array_fill(0, 2, FakeTransport::json(['error' => 'down'], 503, ['Retry-After' => 'NaN'])), maxRetries: 1);
@@ -487,6 +513,32 @@ final class ClientTest extends TestCase
         $this->assertNull($t->header(3, 'Content-Type'));
     }
 
+    public function testEmptyArraysFollowTheSpec(): void
+    {
+        [$client, $t] = $this->client();
+        $client->emails->send([
+            'to' => 'b@inbox.dev',
+            'headers' => [],
+            'template' => ['id' => 't', 'variables' => []],
+            'tags' => [],
+            'attachments' => [['filename' => 'a.txt', 'content' => 'YQ==']],
+        ]);
+        $client->emails->sendBatch([['to' => 'b@inbox.dev', 'headers' => []], []]);
+        $client->contacts->create(['contacts' => [['email' => 'b@inbox.dev', 'properties' => []]]]);
+        $client->contacts->update('ct_1', ['properties' => ['plan' => 'pro'], 'segment_ids' => []]);
+        $this->assertSame('{"to":"b@inbox.dev","headers":{},"template":{"id":"t","variables":{}},"tags":[],"attachments":[{"filename":"a.txt","content":"YQ=="}]}', $t->calls[0]['body']);
+        $this->assertSame('[{"to":"b@inbox.dev","headers":{}},{}]', $t->calls[1]['body']);
+        $this->assertSame('{"contacts":[{"email":"b@inbox.dev","properties":{}}]}', $t->calls[2]['body']);
+        $this->assertSame('{"properties":{"plan":"pro"},"segment_ids":[]}', $t->calls[3]['body']);
+    }
+
+    public function testCallersContentTypeIsKept(): void
+    {
+        [$client, $t] = $this->client();
+        $client->contacts->create(['email' => 'b@inbox.dev'], options: ['headers' => ['content-type' => 'application/json; charset=utf-8']]);
+        $this->assertSame(['application/json; charset=utf-8'], $t->headerValues(0, 'Content-Type'));
+    }
+
     public function testBodyThatIsNotUtf8(): void
     {
         [$client, $t] = $this->client();
@@ -505,6 +557,8 @@ final class ClientTest extends TestCase
         $this->assertFalse(Webhooks::verifySignature($payload, null, $secret));
         $this->assertFalse(Webhooks::verifySignature($payload, $signature, ''));
         $this->assertFalse(Webhooks::verifySignature($payload, substr($signature, 0, 63), $secret));
+        $this->assertTrue(Webhooks::verifySignature($payload, "\f" . $signature . "\v", $secret));
+        $this->assertFalse(Webhooks::verifySignature($payload, $signature . "\0", $secret));
         $this->assertSame('email.delivered', Webhooks::parse($payload, ['X-SMTPfast-Signature' => $signature], $secret)['type']);
         $this->assertSame('email.delivered', Webhooks::parse($payload, ['x-smtpfast-signature' => [$signature]], $secret)['type']);
         $this->expectException(WebhookVerificationException::class);

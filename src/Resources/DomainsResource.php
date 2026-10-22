@@ -52,7 +52,7 @@ final class DomainsResource
      */
     public function create(array $params, array $options = []): mixed
     {
-        return $this->core->request('POST', '/v1/domains', body: $params, options: $options);
+        return $this->core->request('POST', '/v1/domains', body: $params, bodyShape: 'addDomain', options: $options);
     }
 
     /**
@@ -75,7 +75,7 @@ final class DomainsResource
      */
     public function update(string $id, array $params, array $options = []): mixed
     {
-        return $this->core->request('PATCH', '/v1/domains/{id}', pathParams: ['id' => $id], body: $params, options: $options);
+        return $this->core->request('PATCH', '/v1/domains/{id}', pathParams: ['id' => $id], body: $params, bodyShape: 'updateDomainReceiving', options: $options);
     }
 
     /**
@@ -109,7 +109,7 @@ final class DomainsResource
      */
     public function claim(array $params, array $options = []): mixed
     {
-        return $this->core->request('POST', '/v1/domains/claim', body: $params, options: $options);
+        return $this->core->request('POST', '/v1/domains/claim', body: $params, bodyShape: 'claimDomain', options: $options);
     }
 
     /**

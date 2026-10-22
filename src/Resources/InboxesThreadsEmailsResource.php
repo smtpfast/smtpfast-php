@@ -67,7 +67,7 @@ final class InboxesThreadsEmailsResource
      */
     public function reply(string $inboxId, string $threadId, string $emailId, array $params, ?string $idempotencyKey = null, array $options = []): mixed
     {
-        return $this->core->request('POST', '/v1/inboxes/{inbox_id}/threads/{thread_id}/emails/{email_id}/reply', pathParams: ['inbox_id' => $inboxId, 'thread_id' => $threadId, 'email_id' => $emailId], body: $params, idempotent: true, idempotencyKey: $idempotencyKey, options: $options);
+        return $this->core->request('POST', '/v1/inboxes/{inbox_id}/threads/{thread_id}/emails/{email_id}/reply', pathParams: ['inbox_id' => $inboxId, 'thread_id' => $threadId, 'email_id' => $emailId], body: $params, bodyShape: 'replyToInboxThreadEmail', idempotent: true, idempotencyKey: $idempotencyKey, options: $options);
     }
 
     /**
@@ -79,6 +79,6 @@ final class InboxesThreadsEmailsResource
      */
     public function forward(string $inboxId, string $threadId, string $emailId, array $params, ?string $idempotencyKey = null, array $options = []): mixed
     {
-        return $this->core->request('POST', '/v1/inboxes/{inbox_id}/threads/{thread_id}/emails/{email_id}/forward', pathParams: ['inbox_id' => $inboxId, 'thread_id' => $threadId, 'email_id' => $emailId], body: $params, idempotent: true, idempotencyKey: $idempotencyKey, options: $options);
+        return $this->core->request('POST', '/v1/inboxes/{inbox_id}/threads/{thread_id}/emails/{email_id}/forward', pathParams: ['inbox_id' => $inboxId, 'thread_id' => $threadId, 'email_id' => $emailId], body: $params, bodyShape: 'forwardInboxThreadEmail', idempotent: true, idempotencyKey: $idempotencyKey, options: $options);
     }
 }

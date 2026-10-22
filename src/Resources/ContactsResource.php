@@ -54,7 +54,7 @@ final class ContactsResource
      */
     public function create(array $params, array $options = []): mixed
     {
-        return $this->core->request('POST', '/v1/contacts', body: $params, options: $options);
+        return $this->core->request('POST', '/v1/contacts', body: $params, bodyShape: 'createContact', options: $options);
     }
 
     /**
@@ -66,7 +66,7 @@ final class ContactsResource
      */
     public function deleteMany(array $params, array $options = []): mixed
     {
-        return $this->core->request('DELETE', '/v1/contacts', body: $params, options: $options);
+        return $this->core->request('DELETE', '/v1/contacts', body: $params, bodyShape: 'deleteContacts', options: $options);
     }
 
     /**
@@ -102,7 +102,7 @@ final class ContactsResource
      */
     public function update(string $id, array $params, array $options = []): mixed
     {
-        return $this->core->request('PATCH', '/v1/contacts/{id}', pathParams: ['id' => $id], body: $params, options: $options);
+        return $this->core->request('PATCH', '/v1/contacts/{id}', pathParams: ['id' => $id], body: $params, bodyShape: 'updateContact', options: $options);
     }
 
     /**

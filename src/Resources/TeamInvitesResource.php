@@ -44,7 +44,7 @@ final class TeamInvitesResource
      */
     public function create(array $params, array $options = []): mixed
     {
-        return $this->core->request('POST', '/v1/team/invites', body: $params, options: $options);
+        return $this->core->request('POST', '/v1/team/invites', body: $params, bodyShape: 'createTeamInvite', options: $options);
     }
 
     /**

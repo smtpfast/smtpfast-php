@@ -74,7 +74,7 @@ final class InboxesThreadsResource
      */
     public function update(string $inboxId, string $threadId, array $params, array $options = []): mixed
     {
-        return $this->core->request('PATCH', '/v1/inboxes/{inbox_id}/threads/{thread_id}', pathParams: ['inbox_id' => $inboxId, 'thread_id' => $threadId], body: $params, options: $options);
+        return $this->core->request('PATCH', '/v1/inboxes/{inbox_id}/threads/{thread_id}', pathParams: ['inbox_id' => $inboxId, 'thread_id' => $threadId], body: $params, bodyShape: 'updateInboxThread', options: $options);
     }
 
     /**

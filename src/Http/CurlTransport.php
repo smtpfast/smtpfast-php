@@ -29,7 +29,8 @@ final class CurlTransport implements Transport
 
         $lines = [];
         foreach ($headers as $name => $value) {
-            $lines[] = $name . ': ' . $value;
+            // "Name:" with no value tells curl to drop the header; "Name;" sends it empty.
+            $lines[] = $value === '' ? $name . ';' : $name . ': ' . $value;
         }
         $lines[] = 'Expect:';
         if ($body === null && in_array($method, ['POST', 'PUT', 'PATCH'], true)) {
@@ -64,7 +65,9 @@ final class CurlTransport implements Transport
             },
         ];
         curl_setopt_array($handle, $settings);
-        if ($body !== null) {
+        if ($method === 'HEAD') {
+            curl_setopt($handle, CURLOPT_NOBODY, true);
+        } elseif ($body !== null) {
             curl_setopt($handle, CURLOPT_POSTFIELDS, $body);
         }
 

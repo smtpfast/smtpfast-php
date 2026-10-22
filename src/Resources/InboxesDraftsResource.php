@@ -59,7 +59,7 @@ final class InboxesDraftsResource
      */
     public function create(string $inboxId, array $params, array $options = []): mixed
     {
-        return $this->core->request('POST', '/v1/inboxes/{inbox_id}/drafts', pathParams: ['inbox_id' => $inboxId], body: $params, options: $options);
+        return $this->core->request('POST', '/v1/inboxes/{inbox_id}/drafts', pathParams: ['inbox_id' => $inboxId], body: $params, bodyShape: 'createInboxDraft', options: $options);
     }
 
     /**
@@ -82,7 +82,7 @@ final class InboxesDraftsResource
      */
     public function update(string $inboxId, string $draftId, array $params, array $options = []): mixed
     {
-        return $this->core->request('PATCH', '/v1/inboxes/{inbox_id}/drafts/{draft_id}', pathParams: ['inbox_id' => $inboxId, 'draft_id' => $draftId], body: $params, options: $options);
+        return $this->core->request('PATCH', '/v1/inboxes/{inbox_id}/drafts/{draft_id}', pathParams: ['inbox_id' => $inboxId, 'draft_id' => $draftId], body: $params, bodyShape: 'updateInboxDraft', options: $options);
     }
 
     /**
@@ -105,6 +105,6 @@ final class InboxesDraftsResource
      */
     public function send(string $inboxId, string $draftId, ?array $params = null, array $options = []): mixed
     {
-        return $this->core->request('POST', '/v1/inboxes/{inbox_id}/drafts/{draft_id}/send', pathParams: ['inbox_id' => $inboxId, 'draft_id' => $draftId], body: $params, options: $options);
+        return $this->core->request('POST', '/v1/inboxes/{inbox_id}/drafts/{draft_id}/send', pathParams: ['inbox_id' => $inboxId, 'draft_id' => $draftId], body: $params, bodyShape: 'sendInboxDraft', options: $options);
     }
 }

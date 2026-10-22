@@ -45,7 +45,7 @@ final class FormsPendingResource
      */
     public function approveAll(string $id, ?array $params = null, array $options = []): mixed
     {
-        return $this->core->request('POST', '/v1/forms/{id}/pending/approve-all', pathParams: ['id' => $id], body: $params, options: $options);
+        return $this->core->request('POST', '/v1/forms/{id}/pending/approve-all', pathParams: ['id' => $id], body: $params, bodyShape: 'approveAllPendingSignups', options: $options);
     }
 
     /**

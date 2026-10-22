@@ -68,7 +68,7 @@ final class EmailsResource
      */
     public function send(array $params, ?string $idempotencyKey = null, array $options = []): mixed
     {
-        return $this->core->request('POST', '/v1/emails', body: $params, idempotent: true, idempotencyKey: $idempotencyKey, options: $options);
+        return $this->core->request('POST', '/v1/emails', body: $params, bodyShape: 'sendEmail', idempotent: true, idempotencyKey: $idempotencyKey, options: $options);
     }
 
     /**
@@ -80,7 +80,7 @@ final class EmailsResource
      */
     public function sendBatch(array $params, ?string $idempotencyKey = null, array $options = []): mixed
     {
-        return $this->core->request('POST', '/v1/emails/batch', body: $params, listBody: true, idempotent: true, idempotencyKey: $idempotencyKey, options: $options);
+        return $this->core->request('POST', '/v1/emails/batch', body: $params, bodyShape: 'sendEmailBatch', idempotent: true, idempotencyKey: $idempotencyKey, options: $options);
     }
 
     /**
@@ -103,7 +103,7 @@ final class EmailsResource
      */
     public function update(string $id, array $params, array $options = []): mixed
     {
-        return $this->core->request('PATCH', '/v1/emails/{id}', pathParams: ['id' => $id], body: $params, options: $options);
+        return $this->core->request('PATCH', '/v1/emails/{id}', pathParams: ['id' => $id], body: $params, bodyShape: 'updateEmail', options: $options);
     }
 
     /**
@@ -126,7 +126,7 @@ final class EmailsResource
      */
     public function share(string $id, ?array $params = null, array $options = []): mixed
     {
-        return $this->core->request('POST', '/v1/emails/{id}/share', pathParams: ['id' => $id], body: $params, options: $options);
+        return $this->core->request('POST', '/v1/emails/{id}/share', pathParams: ['id' => $id], body: $params, bodyShape: 'shareEmail', options: $options);
     }
 
     /**

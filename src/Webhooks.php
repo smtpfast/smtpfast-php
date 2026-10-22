@@ -23,7 +23,8 @@ final class Webhooks
         if ($signature === null || $signature === '' || $secret === '') {
             return false;
         }
-        $signature = strtolower(trim($signature));
+        // ASCII whitespace, as Python's strip() and Go's TrimSpace; not NUL, which PHP's trim() removes by default.
+        $signature = strtolower(trim($signature, " \t\n\r\v\f"));
         if (preg_match('/^[0-9a-f]{64}$/D', $signature) !== 1) {
             return false;
         }

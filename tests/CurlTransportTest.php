@@ -78,6 +78,20 @@ final class CurlTransportTest extends TestCase
         $this->assertArrayNotHasKey('expect', $echo['headers']);
     }
 
+    public function testEmptyHeaderValueIsSent(): void
+    {
+        $echo = $this->echo('GET', '/v1/domains', ['X-Empty' => '', 'X-Full' => 'yes']);
+        $this->assertSame('', $echo['headers']['x-empty'] ?? null);
+        $this->assertSame('yes', $echo['headers']['x-full']);
+    }
+
+    public function testHead(): void
+    {
+        $response = (new CurlTransport())->send('HEAD', 'http://127.0.0.1:' . self::$port . '/v1/domains', [], null, 5.0);
+        $this->assertSame(201, $response->status);
+        $this->assertSame('', $response->body);
+    }
+
     public function testPostWithoutBodySendsAnEmptyOne(): void
     {
         $echo = $this->echo('POST', '/v1/broadcasts/bc_1/cancel');

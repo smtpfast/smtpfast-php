@@ -58,7 +58,7 @@ final class BroadcastsResource
      */
     public function create(array $params, array $options = []): mixed
     {
-        return $this->core->request('POST', '/v1/broadcasts', body: $params, options: $options);
+        return $this->core->request('POST', '/v1/broadcasts', body: $params, bodyShape: 'createBroadcast', options: $options);
     }
 
     /**
@@ -81,7 +81,7 @@ final class BroadcastsResource
      */
     public function update(string $id, array $params, array $options = []): mixed
     {
-        return $this->core->request('PATCH', '/v1/broadcasts/{id}', pathParams: ['id' => $id], body: $params, options: $options);
+        return $this->core->request('PATCH', '/v1/broadcasts/{id}', pathParams: ['id' => $id], body: $params, bodyShape: 'updateBroadcast', options: $options);
     }
 
     /**
@@ -137,7 +137,7 @@ final class BroadcastsResource
      */
     public function send(string $id, ?array $params = null, array $options = []): mixed
     {
-        return $this->core->request('POST', '/v1/broadcasts/{id}/send', pathParams: ['id' => $id], body: $params, options: $options);
+        return $this->core->request('POST', '/v1/broadcasts/{id}/send', pathParams: ['id' => $id], body: $params, bodyShape: 'sendBroadcast', options: $options);
     }
 
     /**
@@ -182,6 +182,6 @@ final class BroadcastsResource
      */
     public function sendTest(string $id, array $params, array $options = []): mixed
     {
-        return $this->core->request('POST', '/v1/broadcasts/{id}/test', pathParams: ['id' => $id], body: $params, options: $options);
+        return $this->core->request('POST', '/v1/broadcasts/{id}/test', pathParams: ['id' => $id], body: $params, bodyShape: 'sendBroadcastTest', options: $options);
     }
 }
