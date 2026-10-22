@@ -47,6 +47,8 @@ final class CurlTransport implements Transport
             CURLOPT_HTTPHEADER => $lines,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_FOLLOWLOCATION => false,
+            // Send the path as built, never resolving dot-segments in it.
+            CURLOPT_PATH_AS_IS => true,
             CURLOPT_TIMEOUT_MS => $milliseconds,
             CURLOPT_CONNECTTIMEOUT_MS => $milliseconds,
             CURLOPT_ENCODING => '',

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace SMTPfast\Tests;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use SMTPfast\Client;
 use SMTPfast\Exception\ApiException;
 use SMTPfast\Exception\AuthenticationException;
@@ -40,6 +41,77 @@ final class ClientTest extends TestCase
         [$client, $t] = $this->client();
         $client->inboxes->threads->emails->reply('in 1', 'th_2', 'em/3', ['text' => 'Thanks']);
         $this->assertSame('/api/v1/inboxes/in%201/threads/th_2/emails/em%2F3/reply', $t->path());
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function dotSegments(): iterable
+    {
+        yield 'empty' => [''];
+        yield 'dot' => ['.'];
+        yield 'dot dot' => ['..'];
+    }
+
+    #[DataProvider('dotSegments')]
+    public function testDotSegmentPathParamsAreRefused(string $id): void
+    {
+        [$client, $t] = $this->client();
+        try {
+            $client->emails->get($id);
+            $this->fail('no exception');
+        } catch (\InvalidArgumentException $e) {
+            $this->assertStringContainsString('Path parameter "id"', $e->getMessage());
+            $this->assertCount(0, $t->calls);
+        }
+    }
+
+    public function testDotsInsideAPathParamAreKept(): void
+    {
+        [$client, $t] = $this->client();
+        $client->inboxes->threads->emails->get('...', 'a..b', '../x');
+        $this->assertSame('/api/v1/inboxes/.../threads/a..b/emails/..%2Fx', $t->path());
+    }
+
+    /**
+     * @return iterable<string, array{array<string, string>, array<string, string>, ?string}>
+     */
+    public static function badHeaders(): iterable
+    {
+        yield 'client header with a line break' => [['X-Trace' => "a\r\nX-Injected: 1"], [], null];
+        yield 'client header name with a space' => [['X Trace' => 'a'], [], null];
+        yield 'option header with a line feed' => [[], ['X-Trace' => "a\nb"], null];
+        yield 'option header with a NUL byte' => [[], ['X-Trace' => "a\0b"], null];
+        yield 'option header name with a colon' => [[], ['X-Trace:' => 'a'], null];
+        yield 'empty option header name' => [[], ['' => 'a'], null];
+        yield 'idempotency key with a line break' => [[], [], "order-1\r\nX-Injected: 1"];
+    }
+
+    /**
+     * @param array<string, string> $clientHeaders
+     * @param array<string, string> $optionHeaders
+     */
+    #[DataProvider('badHeaders')]
+    public function testBadHeadersAreRefused(array $clientHeaders, array $optionHeaders, ?string $idempotencyKey): void
+    {
+        $t = new FakeTransport();
+        try {
+            $client = new Client('sf_test_key', headers: $clientHeaders, transport: $t);
+            $client->emails->send(['to' => 'b@inbox.dev'], idempotencyKey: $idempotencyKey, options: ['headers' => $optionHeaders]);
+            $this->fail('no exception');
+        } catch (\InvalidArgumentException $e) {
+            $this->assertStringNotContainsString('Injected', $e->getMessage());
+            $this->assertCount(0, $t->calls);
+        }
+    }
+
+    public function testApiKeyWithALineBreakIsRefused(): void
+    {
+        $t = new FakeTransport();
+        $client = new Client("sf_test\nX-Injected: 1", transport: $t);
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Authorization');
+        $client->domains->list();
     }
 
     public function testQueryParamsSkipNullAndFormatBools(): void

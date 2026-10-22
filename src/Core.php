@@ -27,6 +27,8 @@ final class Core
     /** Query parameters a ...All method sets, or that cannot combine with walking forward by `after`. */
     private const PAGINATION_MANAGED = ['before', 'page', 'latest'];
     private const OPTION_KEYS = ['timeout', 'maxRetries', 'headers'];
+    /** An RFC 7230 token: the characters a header name may have. */
+    private const HEADER_NAME = '/^[!#$%&\'*+\-.^_`|~0-9A-Za-z]+$/D';
 
     /**
      * Waits between attempts. Tests replace it.
@@ -46,6 +48,9 @@ final class Core
         private readonly array $headers,
         private readonly Transport $transport,
     ) {
+        foreach ($headers as $name => $value) {
+            self::checkHeader((string) $name, $value);
+        }
     }
 
     /**
@@ -58,6 +63,7 @@ final class Core
      * @param RequestOptions $options
      *
      * @throws SMTPfastException
+     * @throws \InvalidArgumentException for a path parameter that is empty, "." or "..", or a header that cannot be sent
      */
     public function request(
         string $method,
@@ -83,10 +89,10 @@ final class Core
         self::setHeader($headers, 'User-Agent', 'smtpfast-php/' . Client::VERSION);
         self::setHeader($headers, 'Accept', 'application/json');
         foreach ($this->headers as $name => $value) {
-            self::setHeader($headers, $name, $value);
+            self::setHeader($headers, (string) $name, $value);
         }
         foreach ($options['headers'] ?? [] as $name => $value) {
-            self::setHeader($headers, $name, $value);
+            self::setHeader($headers, (string) $name, $value);
         }
         if ($idempotencyKey !== null && $idempotencyKey !== '') {
             self::setHeader($headers, 'Idempotency-Key', $idempotencyKey);
@@ -238,6 +244,11 @@ final class Core
     private static function fill(string $route, array $values): string
     {
         foreach ($values as $name => $value) {
+            // rawurlencode keeps these as they are, and as a path segment they
+            // would point the request at another endpoint.
+            if ($value === '' || $value === '.' || $value === '..') {
+                throw new \InvalidArgumentException(sprintf('Path parameter "%s" must not be empty, "." or "..".', $name));
+            }
             $route = str_replace('{' . $name . '}', rawurlencode($value), $route);
         }
 
@@ -276,12 +287,27 @@ final class Core
      */
     private static function setHeader(array &$headers, string $name, string $value): void
     {
+        self::checkHeader($name, $value);
         foreach (array_keys($headers) as $existing) {
             if (strcasecmp($existing, $name) === 0) {
                 unset($headers[$existing]);
             }
         }
         $headers[$name] = $value;
+    }
+
+    /**
+     * Refuse a header that would break the request or add another header.
+     * The message names the header but never repeats its value.
+     */
+    private static function checkHeader(string $name, string $value): void
+    {
+        if (preg_match(self::HEADER_NAME, $name) !== 1) {
+            throw new \InvalidArgumentException(sprintf('Invalid header name "%s".', addcslashes($name, "\0..\37\177")));
+        }
+        if (strpbrk($value, "\r\n\0") !== false) {
+            throw new \InvalidArgumentException(sprintf('The value of header %s contains a line break or a NUL byte.', $name));
+        }
     }
 
     /**
