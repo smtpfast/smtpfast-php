@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 
 jobs:
   test:
@@ -26,10 +27,11 @@ jobs:
       - run: vendor/bin/phpstan --no-progress
       - run: vendor/bin/phpunit
 
-  # Read-only calls to the real API, checked against the spec. Needs a key
-  # with email:read and domain:read in the SMTPFAST_API_KEY secret.
+  # Read-only calls to the real API, checked against the spec. Runs only when
+  # started by hand (Actions > CI > Run workflow). Needs a key with email:read
+  # and domain:read in the SMTPFAST_API_KEY secret.
   live:
-    if: github.event_name == 'push'
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -38,6 +40,11 @@ jobs:
           php-version: "8.4"
           coverage: none
       - run: composer update --no-interaction --no-progress --prefer-dist
-      - run: vendor/bin/phpunit tests/LiveTest.php
+      - name: Fail when the secrets are missing, instead of skipping every test
+        run: test -n "$SMTPFAST_API_KEY" || { echo "::error::Set the SMTPFAST_API_KEY secret"; exit 1; }
         env:
           SMTPFAST_API_KEY: ${{ secrets.SMTPFAST_API_KEY }}
+      - run: vendor/bin/phpunit tests/LiveTest.php --display-skipped
+        env:
+          SMTPFAST_API_KEY: ${{ secrets.SMTPFAST_API_KEY }}
+          SMTPFAST_TEST_FROM: ${{ secrets.SMTPFAST_TEST_FROM }}

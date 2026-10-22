@@ -103,7 +103,7 @@ vendor/bin/phpunit             # unit tests, including one call per operation
 SMTPFAST_API_KEY=sf_... vendor/bin/phpunit tests/LiveTest.php   # read-only calls, checked against the spec
 ```
 
-A daily workflow pulls the spec and opens a pull request when it changed.
+A daily workflow pulls the spec and opens a pull request when it changed. The `live` job of the CI workflow runs the read-only tests when the workflow is started by hand, with the `SMTPFAST_API_KEY` secret.
 
 ## Releases
 
