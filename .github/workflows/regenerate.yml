@@ -1,0 +1,51 @@
+name: Regenerate from the API spec
+
+# Pulls the published OpenAPI document, regenerates the SDK and opens a pull
+# request when anything changed. Runs daily, on demand, and when the API repo
+# sends a spec-changed dispatch.
+on:
+  schedule:
+    - cron: "23 5 * * *"
+  workflow_dispatch:
+  repository_dispatch:
+    types: [spec-changed]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  regenerate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          coverage: none
+      - run: composer update --no-interaction --no-progress --prefer-dist
+      - run: python3 scripts/pull_spec.py
+      # Until the API publishes x-sdk-group/x-sdk-method, there is nothing to regenerate from.
+      - name: Spec has SDK names
+        id: names
+        run: |
+          if grep -q '"x-sdk-method"' spec/openapi.json; then echo "ok=true" >> "$GITHUB_OUTPUT"; else echo "::notice::The published spec has no x-sdk names yet; skipping."; echo "ok=false" >> "$GITHUB_OUTPUT"; fi
+      - run: python3 scripts/generate.py
+        if: steps.names.outputs.ok == 'true'
+      - run: vendor/bin/phpstan --no-progress
+        if: steps.names.outputs.ok == 'true'
+      - run: vendor/bin/phpunit
+        if: steps.names.outputs.ok == 'true'
+      # A pull request opened with the default GITHUB_TOKEN does not start the
+      # CI workflow. Set SDK_BOT_TOKEN (a GitHub App or fine-grained token with
+      # contents and pull-requests write) so it does.
+      - uses: peter-evans/create-pull-request@v7
+        if: steps.names.outputs.ok == 'true'
+        with:
+          token: ${{ secrets.SDK_BOT_TOKEN || github.token }}
+          branch: spec-sync
+          title: "Sync with the API spec"
+          commit-message: "Sync with the API spec"
+          body: |
+            The published OpenAPI document changed. This regenerates `src/Types.php` and `src/Resources/` from it.
+            Review the diff of `spec/openapi.json` for what changed in the API.
