@@ -150,7 +150,7 @@ final class LiveTest extends \PHPUnit\Framework\TestCase
         }
         if (is_array($value) && isset($schema['items']) && array_is_list($value)) {
             foreach ($value as $i => $item) {
-                $this->validate($schema['items'], $item, "$at[$i]", $errors);
+                $this->validate($schema['items'], $item, "{$at}[{$i}]", $errors);
             }
         }
     }
