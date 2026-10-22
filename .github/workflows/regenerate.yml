@@ -47,5 +47,5 @@ jobs:
           title: "Sync with the API spec"
           commit-message: "Sync with the API spec"
           body: |
-            The published OpenAPI document changed. This regenerates `src/Types.php` and `src/Resources/` from it.
+            The published OpenAPI document changed. This regenerates `src/Types.php`, `src/BodyShapes.php` and `src/Resources/` from it.
             Review the diff of `spec/openapi.json` for what changed in the API.
