@@ -70,10 +70,10 @@ final class Core
         ?string $idempotencyKey = null,
         array $options = [],
     ): mixed {
-        foreach (array_keys($options) as $key) {
-            if (!in_array($key, self::OPTION_KEYS, true)) {
-                throw new \InvalidArgumentException(sprintf('Unknown request option "%s"; use timeout, maxRetries or headers.', $key));
-            }
+        // The array shape checks this statically; this is for callers without static analysis.
+        $unknown = array_diff(array_keys($options), self::OPTION_KEYS);
+        if ($unknown !== []) {
+            throw new \InvalidArgumentException(sprintf('Unknown request option "%s"; use timeout, maxRetries or headers.', implode('", "', $unknown)));
         }
         $maxRetries = $options['maxRetries'] ?? $this->maxRetries;
         $timeout = (float) ($options['timeout'] ?? $this->timeout);

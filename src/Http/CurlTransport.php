@@ -40,7 +40,8 @@ final class CurlTransport implements Transport
 
         $responseHeaders = [];
         $milliseconds = max(1, (int) ceil($timeout * 1000));
-        curl_setopt_array($handle, [
+        /** @var array<int, mixed> $settings */
+        $settings = [
             CURLOPT_URL => $url,
             CURLOPT_CUSTOMREQUEST => $method,
             CURLOPT_HTTPHEADER => $lines,
@@ -59,7 +60,8 @@ final class CurlTransport implements Transport
 
                 return strlen($line);
             },
-        ]);
+        ];
+        curl_setopt_array($handle, $settings);
         if ($body !== null) {
             curl_setopt($handle, CURLOPT_POSTFIELDS, $body);
         }
