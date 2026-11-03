@@ -21,10 +21,13 @@ use SMTPfast\Types;
  */
 final class InboxesThreadsResource
 {
+    public readonly InboxesThreadsNotesResource $notes;
+
     public readonly InboxesThreadsEmailsResource $emails;
 
     public function __construct(private readonly Core $core)
     {
+        $this->notes = new InboxesThreadsNotesResource($core);
         $this->emails = new InboxesThreadsEmailsResource($core);
     }
 

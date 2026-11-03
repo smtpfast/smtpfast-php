@@ -12,7 +12,14 @@ use SMTPfast\Types;
 /**
  * `$client->account`
  *
+ * @phpstan-import-type CreateActivationCheckoutParams from Types
+ * @phpstan-import-type CreateActivationCheckoutResponse from Types
+ * @phpstan-import-type GetAccountActivationResponse from Types
  * @phpstan-import-type GetCapabilitiesResponse from Types
+ * @phpstan-import-type RedeemActivationInviteParams from Types
+ * @phpstan-import-type RedeemActivationInviteResponse from Types
+ * @phpstan-import-type RequestFreeTrialParams from Types
+ * @phpstan-import-type RequestFreeTrialResponse from Types
  * @phpstan-import-type Usage from Types
  * @phpstan-import-type RequestOptions from Core
  */
@@ -42,5 +49,52 @@ final class AccountResource
     public function usage(array $options = []): mixed
     {
         return $this->core->request('GET', '/v1/usage', options: $options);
+    }
+
+    /**
+     * Whether the account is active. `GET /v1/account/activation`
+     *
+     * @param RequestOptions $options
+     * @return GetAccountActivationResponse
+     */
+    public function activation(array $options = []): mixed
+    {
+        return $this->core->request('GET', '/v1/account/activation', options: $options);
+    }
+
+    /**
+     * Ask for the free plan. `POST /v1/account/activation/free-trial`
+     *
+     * @param RequestFreeTrialParams $params
+     * @param RequestOptions $options
+     * @return RequestFreeTrialResponse
+     */
+    public function requestFreeTrial(array $params, array $options = []): mixed
+    {
+        return $this->core->request('POST', '/v1/account/activation/free-trial', body: $params, bodyShape: 'requestFreeTrial', options: $options);
+    }
+
+    /**
+     * Activate with an invite code. `POST /v1/account/activation/invite`
+     *
+     * @param RedeemActivationInviteParams $params
+     * @param RequestOptions $options
+     * @return RedeemActivationInviteResponse
+     */
+    public function redeemInvite(array $params, array $options = []): mixed
+    {
+        return $this->core->request('POST', '/v1/account/activation/invite', body: $params, bodyShape: 'redeemActivationInvite', options: $options);
+    }
+
+    /**
+     * Activate with a paid plan. `POST /v1/account/activation/checkout`
+     *
+     * @param CreateActivationCheckoutParams $params
+     * @param RequestOptions $options
+     * @return CreateActivationCheckoutResponse
+     */
+    public function activationCheckout(array $params, array $options = []): mixed
+    {
+        return $this->core->request('POST', '/v1/account/activation/checkout', body: $params, bodyShape: 'createActivationCheckout', options: $options);
     }
 }

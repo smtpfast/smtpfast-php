@@ -24,8 +24,11 @@ use SMTPfast\Types;
  */
 final class InboxesDraftsResource
 {
+    public readonly InboxesDraftsAttachmentsResource $attachments;
+
     public function __construct(private readonly Core $core)
     {
+        $this->attachments = new InboxesDraftsAttachmentsResource($core);
     }
 
     /**
