@@ -29,6 +29,8 @@ abstract class ClientResources
 
     public readonly TeamResource $team;
 
+    public readonly BillingResource $billing;
+
     public readonly SuppressionsResource $suppressions;
 
     public readonly BroadcastsResource $broadcasts;
@@ -38,6 +40,8 @@ abstract class ClientResources
     public readonly DomainsResource $domains;
 
     public readonly ApiKeysResource $apiKeys;
+
+    public readonly CliResource $cli;
 
     public readonly WebhooksResource $webhooks;
 
@@ -57,11 +61,13 @@ abstract class ClientResources
         $this->segments = new SegmentsResource($core);
         $this->account = new AccountResource($core);
         $this->team = new TeamResource($core);
+        $this->billing = new BillingResource($core);
         $this->suppressions = new SuppressionsResource($core);
         $this->broadcasts = new BroadcastsResource($core);
         $this->templates = new TemplatesResource($core);
         $this->domains = new DomainsResource($core);
         $this->apiKeys = new ApiKeysResource($core);
+        $this->cli = new CliResource($core);
         $this->webhooks = new WebhooksResource($core);
         $this->forms = new FormsResource($core);
         $this->linkDomains = new LinkDomainsResource($core);

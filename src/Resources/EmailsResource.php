@@ -133,12 +133,13 @@ final class EmailsResource
      * Retrieve email metrics. `GET /v1/emails/metrics`
      *
      * @param 'hourly'|'daily'|'weekly'|'monthly'|null $granularity
+     * @param 'providers'|null $include
      * @param RequestOptions $options
      * @return GetEmailMetricsResponse
      */
-    public function getMetrics(?string $startDate = null, ?string $endDate = null, ?string $timezone = null, ?string $granularity = null, ?string $metrics = null, ?string $dimensions = null, ?string $domainId = null, ?string $emailId = null, ?string $broadcastId = null, array $options = []): mixed
+    public function getMetrics(?string $startDate = null, ?string $endDate = null, ?string $timezone = null, ?string $granularity = null, ?string $metrics = null, ?string $dimensions = null, ?string $domainId = null, ?string $emailId = null, ?string $broadcastId = null, ?string $include = null, array $options = []): mixed
     {
-        return $this->core->request('GET', '/v1/emails/metrics', query: ['start_date' => $startDate, 'end_date' => $endDate, 'timezone' => $timezone, 'granularity' => $granularity, 'metrics' => $metrics, 'dimensions' => $dimensions, 'domain_id' => $domainId, 'email_id' => $emailId, 'broadcast_id' => $broadcastId], options: $options);
+        return $this->core->request('GET', '/v1/emails/metrics', query: ['start_date' => $startDate, 'end_date' => $endDate, 'timezone' => $timezone, 'granularity' => $granularity, 'metrics' => $metrics, 'dimensions' => $dimensions, 'domain_id' => $domainId, 'email_id' => $emailId, 'broadcast_id' => $broadcastId, 'include' => $include], options: $options);
     }
 
     /**
