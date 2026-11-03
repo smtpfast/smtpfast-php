@@ -19,7 +19,7 @@ use SMTPfast\Resources\ClientResources;
 final class Client extends ClientResources
 {
     /** The SDK version, sent in the User-Agent header. */
-    public const VERSION = '0.1.0';
+    public const VERSION = '0.2.0';
 
     /**
      * @param string|null $apiKey the default is the SMTPFAST_API_KEY environment variable
