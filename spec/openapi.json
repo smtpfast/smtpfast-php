@@ -993,7 +993,7 @@
       "get": {
         "operationId": "getEmailMetrics",
         "summary": "Retrieve email metrics",
-        "description": "Resend-compatible counts and rates over a date range, for transactional and broadcast email together. Leave dimensions out for one totals row; add period, domain, email or broadcast (email and broadcast cannot be combined) to break the numbers down. Each lifecycle timestamp counts in its own period. Sends where every recipient is the SES mailbox simulator are left out. Rates are percentages with one decimal. Open and click metrics need tracking on. Add include=providers for a breakdown by mailbox provider (Gmail, Outlook, iCloud, Yahoo, Proton, other). Requires the email:read scope.",
+        "description": "Resend-compatible counts and rates over a date range, for transactional and broadcast email together. Leave dimensions out for one totals row; add period, domain, email or broadcast (email and broadcast cannot be combined) to break the numbers down. Each lifecycle timestamp counts in its own period. Sends where every recipient is the SES mailbox simulator are left out. Rates are percentages with one decimal. bounce_rate counts hard bounces only, as SES does (bounced_hard: permanent plus undetermined); bounced_soft and soft_bounce_rate count transient bounces such as a full mailbox, and bounced counts both. Open and click metrics need tracking on. Add include=providers for a breakdown by mailbox provider (Gmail, Outlook, iCloud, Yahoo, Proton, other). Requires the email:read scope.",
         "tags": [
           "Emails"
         ],
@@ -8830,7 +8830,7 @@
       "patch": {
         "operationId": "updateTeamMember",
         "summary": "Change a member's role or billing access",
-        "description": "Send role, can_manage_billing, or both. Owners and admins can change roles under the same rules as the Members page (an admin cannot touch an owner, a team keeps at least one owner). Only an owner can change billing access. The member gets an email when their role changes. Requires the team:manage scope.",
+        "description": "Send role, can_manage_billing, or both. Owners and admins can change roles under the same rules as the Members page (an admin cannot touch an owner, a team keeps at least one owner). The owner who pays for a team with several owners keeps the owner role until they transfer ownership: changing it answers 409. Only an owner can change billing access. The member gets an email when their role changes. Requires the team:manage scope.",
         "tags": [
           "Team"
         ],
@@ -8920,6 +8920,16 @@
               }
             }
           },
+          "409": {
+            "description": "Conflict - the resource already exists or changed meanwhile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
           "429": {
             "description": "Rate limit exceeded - retry after the period indicated in the Retry-After header",
             "content": {
@@ -8950,7 +8960,7 @@
       "delete": {
         "operationId": "removeTeamMember",
         "summary": "Remove a member",
-        "description": "Removes the person from the team and revokes their API keys for it. Team resources stay. You cannot remove yourself this way, and the last owner cannot be removed. Owner or admin only; requires the team:manage scope.",
+        "description": "Removes the person from the team and revokes their API keys for it. Team resources stay. You cannot remove yourself this way, and the last owner cannot be removed. The owner who pays for the team cannot be removed until they transfer ownership (409). Owner or admin only; requires the team:manage scope.",
         "tags": [
           "Team"
         ],
@@ -9009,6 +9019,16 @@
           },
           "404": {
             "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict - the resource already exists or changed meanwhile",
             "content": {
               "application/json": {
                 "schema": {
@@ -18323,7 +18343,7 @@
       "get": {
         "operationId": "getAnalytics",
         "summary": "Get analytics",
-        "description": "Sending and deliverability totals for the account, plus a 30-day daily series. Pass days and/or domain to add a `window` object holding exact counts for that window and sending domain, aggregated in the database rather than sampled from the event log.",
+        "description": "Sending and deliverability totals for the account, plus a 30-day daily series. bounceRate counts hard bounces only, over the last 30 days; the bounces object has the hard and soft counts behind it. Pass days and/or domain to add a `window` object holding exact counts for that window and sending domain, aggregated in the database rather than sampled from the event log.",
         "tags": [
           "Analytics"
         ],
@@ -19736,12 +19756,12 @@
           },
           "track_clicks": {
             "type": "boolean",
-            "description": "Not in Resend, which sets tracking per domain. Rewrite this email's links through the click tracker (true) or send them exactly as written (false). Left out, the account's tracking settings apply, including the setting for transactional email, except that a contact-form relay (every recipient on the From domain or a parent or subdomain of it, Reply-To on an unrelated domain, not sent from an inbox) gets no click tracking. Over SMTP, set the X-SMTPfast-Track-Clicks header to true or false instead; it is removed before sending. To keep one link out of tracking, such as a password reset link with a token, add data-smtpfast-track=\"off\" to its <a> tag; the attribute is removed before sending. null is the same as leaving it out; any other value that is not true or false is refused with 400.",
+            "description": "Not in Resend, which sets tracking per domain. Rewrite this email's links through the click tracker (true) or send them exactly as written (false). Left out, the account's tracking settings apply, including the setting for transactional email, except that a contact-form relay (every recipient on the From domain or a parent or subdomain of it, Reply-To on an unrelated domain, not sent from an inbox) gets no click tracking. Over SMTP, set the X-SMTPfast-Track-Clicks header to true or false instead; it is removed before sending. To keep one link out of tracking, such as a password reset link with a token, add data-smtpfast-track=\"off\" to its <a> tag; the attribute is removed before sending. null is the same as leaving it out; any other value that is not true or false is refused with 400. Click tracking is available on every plan.",
             "example": false
           },
           "track_opens": {
             "type": "boolean",
-            "description": "Not in Resend. Add the open-tracking pixel to this email (true) or not (false). Left out, the account's tracking settings apply. Over SMTP, set the X-SMTPfast-Track-Opens header to true or false instead; it is removed before sending. null is the same as leaving it out; any other value that is not true or false is refused with 400.",
+            "description": "Not in Resend. Add the open-tracking pixel to this email (true) or not (false). Left out, the account's tracking settings apply. Over SMTP, set the X-SMTPfast-Track-Opens header to true or false instead; it is removed before sending. null is the same as leaving it out; any other value that is not true or false is refused with 400. Open tracking is available on every plan.",
             "example": false
           },
           "html": {
@@ -21316,11 +21336,13 @@
           },
           "track_opens": {
             "type": "boolean",
-            "default": true
+            "default": true,
+            "description": "Add the open-tracking pixel to each email. Available on every plan."
           },
           "track_clicks": {
             "type": "boolean",
-            "default": true
+            "default": true,
+            "description": "Send each link through the click tracker. Available on every plan."
           },
           "send_over_minutes": {
             "type": [
@@ -21851,7 +21873,18 @@
           },
           "bounced": {
             "type": "integer",
+            "description": "Every bounce, hard plus soft.",
             "example": 9
+          },
+          "hard_bounced": {
+            "type": "integer",
+            "description": "Bounces SES marked Permanent or Undetermined: the address does not exist or does not take mail.",
+            "example": 4
+          },
+          "soft_bounced": {
+            "type": "integer",
+            "description": "Bounces SES marked Transient: a temporary failure such as a full mailbox.",
+            "example": 5
           },
           "complained": {
             "type": "integer",
@@ -21883,7 +21916,18 @@
           },
           "bounce_rate": {
             "type": "number",
-            "example": 0.7
+            "description": "Hard bounces only, as SES counts them: the same as hard_bounce_rate. Percent of recipients not skipped.",
+            "example": 0.3
+          },
+          "hard_bounce_rate": {
+            "type": "number",
+            "description": "hard_bounced as a percent of recipients not skipped.",
+            "example": 0.3
+          },
+          "soft_bounce_rate": {
+            "type": "number",
+            "description": "soft_bounced as a percent of recipients not skipped. Not part of bounce_rate.",
+            "example": 0.4
           }
         }
       },
@@ -21938,7 +21982,18 @@
           },
           "bounced": {
             "type": "integer",
+            "description": "Every bounce, hard plus soft.",
             "example": 9
+          },
+          "hard_bounced": {
+            "type": "integer",
+            "description": "Bounces SES marked Permanent or Undetermined.",
+            "example": 4
+          },
+          "soft_bounced": {
+            "type": "integer",
+            "description": "Bounces SES marked Transient, such as a full mailbox.",
+            "example": 5
           },
           "complained": {
             "type": "integer",
@@ -21975,8 +22030,16 @@
               "number",
               "null"
             ],
-            "description": "bounced / (delivered + bounced).",
-            "example": 1.12
+            "description": "hard_bounced / (delivered + bounced): hard bounces only, as SES counts them.",
+            "example": 0.5
+          },
+          "soft_bounce_rate": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "soft_bounced / (delivered + bounced). Not part of bounce_rate.",
+            "example": 0.62
           },
           "complaint_rate": {
             "type": [
@@ -23794,7 +23857,7 @@
           "url": {
             "type": "string",
             "format": "uri",
-            "description": "The URL that will receive webhook POST requests",
+            "description": "The URL that will receive webhook POST requests: HTTPS on the standard port (443) of a public host",
             "example": "https://yourapp.com/webhooks/smtpfast"
           },
           "events": {
@@ -23849,6 +23912,7 @@
           "url": {
             "type": "string",
             "format": "uri",
+            "description": "HTTPS on the standard port (443) of a public host",
             "example": "https://yourapp.com/webhooks/smtpfast"
           },
           "events": {
@@ -24507,6 +24571,7 @@
           },
           "bounced": {
             "type": "integer",
+            "description": "Emails with status bounced, hard or soft, all time",
             "example": 402
           },
           "complained": {
@@ -24541,8 +24606,51 @@
           "bounceRate": {
             "type": "number",
             "format": "float",
-            "description": "bounced / (sent - awaitingReport), as a percentage",
-            "example": 1.7
+            "description": "Hard bounce rate over the last 30 days, as a percentage: the same as bounces.hardRate. Hard bounces only, as SES counts them; soft bounces are in bounces.soft.",
+            "example": 0.6
+          },
+          "bounces": {
+            "type": "object",
+            "description": "Bounces over a rolling window (the last 30 days), counted by when each email was sent. A hard bounce is one SES marked Permanent or Undetermined: the address does not exist or does not take mail. A soft bounce is Transient, a temporary failure such as a full mailbox, and is not part of the bounce rate. A past bounce stays counted even if the address was later unsubscribed or suppressed.",
+            "properties": {
+              "days": {
+                "type": "integer",
+                "description": "Window length in days",
+                "example": 30
+              },
+              "from": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Start of the window"
+              },
+              "reported": {
+                "type": "integer",
+                "description": "Emails sent in the window with a delivery or bounce report: the rates are over this",
+                "example": 10840
+              },
+              "hard": {
+                "type": "integer",
+                "description": "Hard-bounced emails sent in the window",
+                "example": 65
+              },
+              "soft": {
+                "type": "integer",
+                "description": "Soft-bounced emails sent in the window",
+                "example": 212
+              },
+              "hardRate": {
+                "type": "number",
+                "format": "float",
+                "description": "hard / reported, as a percentage",
+                "example": 0.6
+              },
+              "softRate": {
+                "type": "number",
+                "format": "float",
+                "description": "soft / reported, as a percentage",
+                "example": 2
+              }
+            }
           },
           "daily": {
             "type": "array",
@@ -24631,10 +24739,12 @@
                     "type": "integer"
                   },
                   "hard_bounced": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "Bounce events SES marked Permanent or Undetermined, not counting refusals by the SES account-level suppression list"
                   },
                   "soft_bounced": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "Bounce events SES marked Transient"
                   },
                   "complained": {
                     "type": "integer"
