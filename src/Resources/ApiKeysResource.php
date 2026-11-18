@@ -12,12 +12,12 @@ use SMTPfast\Types;
 /**
  * `$client->apiKeys`
  *
+ * @phpstan-import-type ApiKey from Types
  * @phpstan-import-type ApiKeyCreated from Types
  * @phpstan-import-type CreateApiKeyRequest from Types
  * @phpstan-import-type ListApiKeysResponse from Types
  * @phpstan-import-type RevokeApiKeyResponse from Types
  * @phpstan-import-type UpdateApiKeyParams from Types
- * @phpstan-import-type UpdateApiKeyResponse from Types
  * @phpstan-import-type RequestOptions from Core
  */
 final class ApiKeysResource
@@ -54,7 +54,7 @@ final class ApiKeysResource
      *
      * @param UpdateApiKeyParams $params
      * @param RequestOptions $options
-     * @return UpdateApiKeyResponse
+     * @return ApiKey
      */
     public function update(string $id, array $params, array $options = []): mixed
     {
