@@ -28,9 +28,12 @@ final class ContactsResource
 {
     public readonly ContactsSegmentsResource $segments;
 
+    public readonly ContactsTopicsResource $topics;
+
     public function __construct(private readonly Core $core)
     {
         $this->segments = new ContactsSegmentsResource($core);
+        $this->topics = new ContactsTopicsResource($core);
     }
 
     /**
@@ -40,9 +43,9 @@ final class ContactsResource
      * @param RequestOptions $options
      * @return ContactList
      */
-    public function list(?string $q = null, ?string $status = null, ?bool $disposable = null, ?string $segmentId = null, ?int $limit = null, ?int $page = null, array $options = []): mixed
+    public function list(?string $q = null, ?string $status = null, ?bool $disposable = null, ?string $segmentId = null, ?string $topicId = null, ?int $limit = null, ?int $page = null, array $options = []): mixed
     {
-        return $this->core->request('GET', '/v1/contacts', query: ['q' => $q, 'status' => $status, 'disposable' => $disposable, 'segment_id' => $segmentId, 'limit' => $limit, 'page' => $page], options: $options);
+        return $this->core->request('GET', '/v1/contacts', query: ['q' => $q, 'status' => $status, 'disposable' => $disposable, 'segment_id' => $segmentId, 'topic_id' => $topicId, 'limit' => $limit, 'page' => $page], options: $options);
     }
 
     /**
