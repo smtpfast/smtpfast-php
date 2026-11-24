@@ -31,6 +31,8 @@ abstract class ClientResources
 
     public readonly BillingResource $billing;
 
+    public readonly TopicsResource $topics;
+
     public readonly SuppressionsResource $suppressions;
 
     public readonly BroadcastsResource $broadcasts;
@@ -62,6 +64,7 @@ abstract class ClientResources
         $this->account = new AccountResource($core);
         $this->team = new TeamResource($core);
         $this->billing = new BillingResource($core);
+        $this->topics = new TopicsResource($core);
         $this->suppressions = new SuppressionsResource($core);
         $this->broadcasts = new BroadcastsResource($core);
         $this->templates = new TemplatesResource($core);

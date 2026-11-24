@@ -101,9 +101,9 @@ final class BroadcastsResource
      * @param RequestOptions $options
      * @return GetBroadcastAudienceResponse
      */
-    public function getAudience(?string $segmentId = null, array $options = []): mixed
+    public function getAudience(?string $segmentId = null, ?string $topicId = null, array $options = []): mixed
     {
-        return $this->core->request('GET', '/v1/broadcasts/audience', query: ['segment_id' => $segmentId], options: $options);
+        return $this->core->request('GET', '/v1/broadcasts/audience', query: ['segment_id' => $segmentId, 'topic_id' => $topicId], options: $options);
     }
 
     /**
